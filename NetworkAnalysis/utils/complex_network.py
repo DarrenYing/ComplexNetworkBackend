@@ -38,12 +38,14 @@ class ComplexNetwork:
         graph_data = {}
         nodes = []
         edges = []
+        degree_map = nx.degree(self.network)
+        name_map = self.raw_data["name_map"]
         for node_id in self.network.nodes:
-            temp = {"id": node_id, "node_name": self.raw_data["name_map"][node_id]}
+            temp = {"id": node_id, "node_name": name_map[node_id], "node_degree": degree_map[node_id]}
             # temp = {"id": str(node_id)}
             nodes.append(temp)
         for edge in self.network.edges:
-            temp = {"source": str(edge[0]), "target": str(edge[1])}
+            temp = {"source": str(edge[0]), "target": str(edge[1]), "source_name": name_map[edge[0]], "target_name": name_map[edge[1]]}
             edges.append(temp)
 
         # print(len(nodes), len(edges))
