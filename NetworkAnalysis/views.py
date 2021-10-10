@@ -37,7 +37,9 @@ def get_edge_attributes(request):
 
 
 def get_node_distribution_data(request):
-    pass
+    node_distribution = network.node_distribution()
+    response = {"data": node_distribution, "code": 20000}
+    return JsonResponse(response)
 
 
 def attack_network(request):
@@ -45,10 +47,9 @@ def attack_network(request):
     attack_method = request_data["method"]  # 前端给出攻击方式
     evaluation = network.net_attack(method=attack_method)
     new_net_attributes = network.get_network_params()
-    response = {'data':
-        {
-            "new_network": new_net_attributes,
-            "robust_evaluation": evaluation,
-        },
+    response = {'data': {
+        "new_network": new_net_attributes,
+        "robust_evaluation": evaluation,
+    },
         'code': 20000}
     return JsonResponse(response)
