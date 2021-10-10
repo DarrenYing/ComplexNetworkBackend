@@ -2,7 +2,8 @@ import itertools
 
 import networkx as nx
 from tqdm import tqdm
-from .utils import load_data, cal_average_path_length
+from utils import load_data, cal_average_path_length
+import random
 
 
 class ComplexNetwork:
@@ -45,7 +46,8 @@ class ComplexNetwork:
             # temp = {"id": str(node_id)}
             nodes.append(temp)
         for edge in self.network.edges:
-            temp = {"source": str(edge[0]), "target": str(edge[1]), "source_name": name_map[edge[0]], "target_name": name_map[edge[1]]}
+            temp = {"source": str(edge[0]), "target": str(edge[1]), "source_name": name_map[edge[0]],
+                    "target_name": name_map[edge[1]]}
             edges.append(temp)
 
         # print(len(nodes), len(edges))
@@ -53,8 +55,51 @@ class ComplexNetwork:
         graph_data["edges"] = edges
         return graph_data
 
-    def attack(self):
+    def net_attack(self, method="random"):
+        method = method.lower()
+        assert method == "random" or method == "intention"
+        # before_shortest_avg_path = nx.average_shortest_path_length(self.network)
+        before_max_connection = len(max(nx.weakly_connected_components(self.network), key=len))
+
+        if method == "random":
+            attack_node = random.choice(list(self.network.nodes))
+        elif method == "intention":
+            node_list = self.network.degree
+            node_list = sorted(list(node_list), key=lambda x: -x[1])
+            # print(node_list)
+            attack_node = node_list[0][0]
+        else:
+            raise Exception("Wrong attack operation!")
+        self.network.remove_node(attack_node)
+
+        # after_shortest_avg_path = nx.average_shortest_path_length(self.network)
+        after_max_connection = len(max(nx.weakly_connected_components(self.network), key=len))
+        return {
+            # "before_shortest_avg_path": before_shortest_avg_path,
+            # "after_shortest_avg_path": after_shortest_avg_path,
+            "removed_node": attack_node,
+            "connection_ratio": after_max_connection / before_max_connection
+        }
+
+    def __find_max_connection(self):
         pass
+
+    def node_distribution(self):
+        node_list = self.network.degree
+        node_dis_dic = {}
+        for _, degree in list(node_list):
+            if str(degree) in node_dis_dic.keys():
+                node_dis_dic[str(degree)] += 1
+            else:
+                node_dis_dic[str(degree)] = 1
+        x_labels = list(node_dis_dic.keys())
+        y_labels = list(node_dis_dic.values())
+        return {
+            "x_axis_name": "node degree",
+            "x_axis_label": x_labels,
+            "y_axis_name": "count",
+            "graph_data": y_labels,
+        }
 
     def raw_repr(self):
         print(self.raw_data.keys())
@@ -79,7 +124,15 @@ class ComplexNetwork:
 
 
 if __name__ == "__main__":
-    cn = ComplexNetwork()
-    cn.get_network_params()
-    p = cn.get_node_params(1918244613)
-    print(p)
+    G = ComplexNetwork()
+    # print(G.node_distribution())
+    # print(G.get_network_params())
+    # p = G.get_node_params(1918244613)
+    # print(p)
+    print(G.net_attack(method="intention"))
+    print(G.net_attack(method="intention"))
+    # print(G.net_attack())
+    # p = G.get_node_params(1918244613)
+    # print(p)
+    # print(G.network.degree)
+    # print(G.node_distribution())

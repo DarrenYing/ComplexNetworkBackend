@@ -7,5 +7,6 @@ urlpatterns = [
     path('network-attr', views.get_network_attributes),
     path('node-attr', views.get_node_attributes),
     path('edge-attr', views.get_edge_attributes),
-    path('node-distribution', views.get_node_attributes),
+    path('node-distribution', views.get_node_distribution_data),
+    path('network_attack', views.attack_network)
 ]

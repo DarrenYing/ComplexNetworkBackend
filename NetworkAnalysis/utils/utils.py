@@ -1,6 +1,6 @@
 import pickle as pkl
 
-default_path = 'D:\\Codings\\python_work\\ComplexNetworkBackend\\data\\progress100.pkl'
+default_path = '../../data/progress100.pkl'
 
 
 def load_data(path=default_path):
