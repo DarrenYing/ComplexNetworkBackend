@@ -5,7 +5,7 @@ from collections import Counter
 import networkx as nx
 from tqdm import tqdm
 
-from .utils import load_data, cal_average_path_length
+from utils import load_data, cal_average_path_length
 
 
 class ComplexNetwork:
@@ -60,34 +60,39 @@ class ComplexNetwork:
         graph_data["edges"] = edges
         return graph_data
 
-    def net_attack(self, method="random"):
+    def net_attack(self, attack_times=1, method="random"):
         method = method.lower()
         assert method == "random" or method == "intention"
         # before_shortest_avg_path = nx.average_shortest_path_length(self.network)
         before_max_connection = len(max(nx.weakly_connected_components(self.network), key=len))
 
         if method == "random":
-            attacked_node = random.choice(list(self.network.nodes))
+            attacked_nodes = random.sample(list(self.network.nodes), attack_times)
         elif method == "intention":
             node_list = self.network.degree
             node_list = sorted(list(node_list), key=lambda x: -x[1])
             # print(node_list)
-            attacked_node = node_list[0][0]
+            attacked_nodes = [i[0] for i in node_list[:attack_times]]
         else:
             raise Exception("Wrong attack operation!")
 
-        attacked_node_name = self.raw_data["name_map"][attacked_node]
-        attacked_node_degree = nx.degree(self.network)[attacked_node]
+        print(attacked_nodes)
+        attacked_nodes_list = []
+        for each_node in attacked_nodes:
+            tmpdic = {}
+            # print(self.raw_data["name_map"])
+            tmpdic["attacked_node_name"] = self.raw_data["name_map"][each_node]
+            tmpdic["attacked_node_degree"] = nx.degree(self.network)[each_node]
+            attacked_nodes_list.append(tmpdic)
 
-        self.network.remove_node(attacked_node)
+        self.network.remove_nodes_from(attacked_nodes)
 
         # after_shortest_avg_path = nx.average_shortest_path_length(self.network)
         after_max_connection = len(max(nx.weakly_connected_components(self.network), key=len))
         return {
             # "before_shortest_avg_path": before_shortest_avg_path,
             # "after_shortest_avg_path": after_shortest_avg_path,
-            "attacked_node_name": attacked_node_name,
-            "attacked_node_degree": attacked_node_degree,
+            "attacked_nodes": attacked_nodes_list,
             "connection_ratio": round(after_max_connection / before_max_connection, 3)
         }
 
@@ -130,13 +135,19 @@ class ComplexNetwork:
 if __name__ == "__main__":
     G = ComplexNetwork()
     # print(G.node_distribution())
-    # print(G.get_network_params())
+    print(G.get_network_params())
     # p = G.get_node_params(1918244613)
     # print(p)
-    print(G.net_attack(method="intention"))
-    print(G.net_attack(method="intention"))
-    # print(G.net_attack())
+    print(G.net_attack(method="intention", attack_times=1)['connection_ratio'])
+    # print(G.net_attack(method="random", attack_times=1))
     # p = G.get_node_params(1918244613)
     # print(p)
     # print(G.network.degree)
-    # print(G.node_distribution())
+    # print(G.get_node_distribution())
+    # sum = 0
+    # for i in range(0, 10):
+    #     G = ComplexNetwork()
+    #     dic = G.net_attack(method="intention", attack_times=1)
+    #     sum += dic["connection_ratio"]
+    #
+    # print(sum/10)
