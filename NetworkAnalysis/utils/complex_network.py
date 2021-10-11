@@ -5,7 +5,7 @@ from collections import Counter
 import networkx as nx
 from tqdm import tqdm
 
-from utils import load_data, cal_average_path_length
+from .utils import load_data, cal_average_path_length
 
 
 class ComplexNetwork:
@@ -60,9 +60,13 @@ class ComplexNetwork:
         graph_data["edges"] = edges
         return graph_data
 
-    def net_attack(self, attack_times=1, method="random"):
-        method = method.lower()
-        assert method == "random" or method == "intention"
+    def net_attack(self, method="random", attack_times=1):
+        if float(attack_times) < 1:
+            attack_times = round(float(attack_times)*len(self.network.nodes))
+        elif int(attack_times) >= len(self.network.nodes):
+            attack_times = len(self.network.nodes) - 1
+        else:
+            attack_times = int(attack_times)
         # before_shortest_avg_path = nx.average_shortest_path_length(self.network)
         before_max_connection = len(max(nx.weakly_connected_components(self.network), key=len))
 
@@ -79,11 +83,11 @@ class ComplexNetwork:
         print(attacked_nodes)
         attacked_nodes_list = []
         for each_node in attacked_nodes:
-            tmpdic = {}
-            # print(self.raw_data["name_map"])
-            tmpdic["attacked_node_name"] = self.raw_data["name_map"][each_node]
-            tmpdic["attacked_node_degree"] = nx.degree(self.network)[each_node]
-            attacked_nodes_list.append(tmpdic)
+            tmp_dic = {
+                "attacked_node_name": self.raw_data["name_map"][each_node],
+                "attacked_node_degree": nx.degree(self.network)[each_node]
+            }
+            attacked_nodes_list.append(tmp_dic)
 
         self.network.remove_nodes_from(attacked_nodes)
 

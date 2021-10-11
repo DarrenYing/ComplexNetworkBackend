@@ -45,11 +45,10 @@ def get_node_distribution_data(request):
 
 def attack_network(request):
     request_data = json.loads(request.body)
-    attack_method = request_data["method"]  # 前端给出攻击方式
-    attack_times = request_data["times"]
-    evaluation = network.net_attack(method=attack_method,attack_times=attack_times)
-    new_net_attributes = network.generate_graph_data()
-    # new_graph_data = network.generate_graph_data()
+    attack_method = request_data.get("method", "random")  # 前端给出攻击方式
+    attack_times = request_data.get("attacked_times")
+    evaluation = network.net_attack(method=attack_method, attack_times=attack_times)
+    new_net_attributes = network.get_network_params()
     response = {
         'data': {
             "new_network": new_net_attributes,
