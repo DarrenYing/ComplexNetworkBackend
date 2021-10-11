@@ -1,9 +1,11 @@
 import itertools
+import random
+from collections import Counter
 
 import networkx as nx
 from tqdm import tqdm
-from utils import load_data, cal_average_path_length
-import random
+
+from .utils import load_data, cal_average_path_length
 
 
 class ComplexNetwork:
@@ -24,6 +26,9 @@ class ComplexNetwork:
             edges = itertools.product([user["id"]], follows)
             network.add_edges_from(edges)
         return network
+
+    def retrieve(self):
+        self.network = self.__generate_network()  # 重置数据
 
     def get_network_params(self):
         net_clustering_coefficient = nx.average_clustering(self.network)
@@ -62,42 +67,41 @@ class ComplexNetwork:
         before_max_connection = len(max(nx.weakly_connected_components(self.network), key=len))
 
         if method == "random":
-            attack_node = random.choice(list(self.network.nodes))
+            attacked_node = random.choice(list(self.network.nodes))
         elif method == "intention":
             node_list = self.network.degree
             node_list = sorted(list(node_list), key=lambda x: -x[1])
             # print(node_list)
-            attack_node = node_list[0][0]
+            attacked_node = node_list[0][0]
         else:
             raise Exception("Wrong attack operation!")
-        self.network.remove_node(attack_node)
+
+        attacked_node_name = self.raw_data["name_map"][attacked_node]
+        attacked_node_degree = nx.degree(self.network)[attacked_node]
+
+        self.network.remove_node(attacked_node)
 
         # after_shortest_avg_path = nx.average_shortest_path_length(self.network)
         after_max_connection = len(max(nx.weakly_connected_components(self.network), key=len))
         return {
             # "before_shortest_avg_path": before_shortest_avg_path,
             # "after_shortest_avg_path": after_shortest_avg_path,
-            "removed_node": attack_node,
-            "connection_ratio": after_max_connection / before_max_connection
+            "attacked_node_name": attacked_node_name,
+            "attacked_node_degree": attacked_node_degree,
+            "connection_ratio": round(after_max_connection / before_max_connection, 3)
         }
 
     def __find_max_connection(self):
         pass
 
-    def node_distribution(self):
-        node_list = self.network.degree
-        node_dis_dic = {}
-        for _, degree in list(node_list):
-            if str(degree) in node_dis_dic.keys():
-                node_dis_dic[str(degree)] += 1
-            else:
-                node_dis_dic[str(degree)] = 1
-        x_labels = list(node_dis_dic.keys())
-        y_labels = list(node_dis_dic.values())
+    def get_node_distribution(self):
+        counts = Counter(d for n, d in self.network.degree())
+        x_labels = list(range(max(counts) + 1))
+        y_labels = [counts.get(i, 0) for i in x_labels]
         return {
-            "x_axis_name": "node degree",
+            "x_axis_name": "Node Degree",
             "x_axis_label": x_labels,
-            "y_axis_name": "count",
+            "y_axis_name": "Count",
             "graph_data": y_labels,
         }
 

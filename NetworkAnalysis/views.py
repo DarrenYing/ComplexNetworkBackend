@@ -1,7 +1,8 @@
 import json
 
-from .utils.complex_network import ComplexNetwork
 from django.http import JsonResponse
+
+from .utils.complex_network import ComplexNetwork
 
 # global network
 network = ComplexNetwork()
@@ -37,7 +38,7 @@ def get_edge_attributes(request):
 
 
 def get_node_distribution_data(request):
-    node_distribution = network.node_distribution()
+    node_distribution = network.get_node_distribution()
     response = {"data": node_distribution, "code": 20000}
     return JsonResponse(response)
 
@@ -47,9 +48,19 @@ def attack_network(request):
     attack_method = request_data["method"]  # 前端给出攻击方式
     evaluation = network.net_attack(method=attack_method)
     new_net_attributes = network.get_network_params()
-    response = {'data': {
-        "new_network": new_net_attributes,
-        "robust_evaluation": evaluation,
-    },
-        'code': 20000}
+    # new_graph_data = network.generate_graph_data()
+    response = {
+        'data': {
+            "new_network": new_net_attributes,
+            "robust_evaluation": evaluation,
+        },
+        'code': 20000
+    }
     return JsonResponse(response)
+
+
+def retrieve_network(request):
+    network.retrieve()
+    response = {'code': 20000}
+    return JsonResponse(response)
+
