@@ -10,4 +10,6 @@ urlpatterns = [
     path('node-distribution', views.get_node_distribution_data),
     path('network-attack', views.attack_network),
     path('network-retrieve', views.retrieve_network),
+    path('graph-data-community', views.get_graph_data_with_community),
+    path('influence-comparison', views.get_influence_comparison_data),
 ]

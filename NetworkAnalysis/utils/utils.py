@@ -1,6 +1,6 @@
 import pickle as pkl
 
-default_path = 'D:\\Codings\\python_work\\ComplexNetworkBackend\\data\\progress100.pkl'
+default_path = 'D:\\Codings\\github_repo\\ComplexNetworkBackend\\data\\progress100.pkl'
 # default_path = '../../data/progress100.pkl'
 # default_path = '../../data/progress.pkl'
 
@@ -21,3 +21,16 @@ def cal_average_path_length(path_dict):
     if not path_count:
         return 0
     return total_len / path_count
+
+
+def get_combo_name(communities, element):
+    for com in communities:
+        if element in com:
+            return 'Combo' + str(communities.index(com))
+    return 'Default Combo'
+
+
+def get_combos_arr(length):
+    names = ['Combo' + str(i) for i in range(length)]
+    res = [{'id': item, 'label': item} for item in names]
+    return res

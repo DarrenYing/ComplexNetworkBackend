@@ -64,3 +64,21 @@ def retrieve_network(request):
     response = {'code': 20000}
     return JsonResponse(response)
 
+
+def get_graph_data_with_community(request):
+    request_data = json.loads(request.body)
+    community_num = int(request_data.get('community_num'))   # 社区数量
+    method = request_data.get('method')  # 社区检测方法
+    graph_data = network.generate_graph_data_with_community(community_num, method)
+    response = {'data': graph_data, 'code': 20000}
+    return JsonResponse(response)
+
+
+def get_influence_comparison_data(request):
+    request_data = json.loads(request.body)
+    is_weighted = request_data.get('is_weighted')
+    p = float(request_data.get('possibility'))
+    epochs = int(request_data.get('epochs'))
+    data = network.get_influence_comparison_data(is_weighted, epochs, p)
+    response = {'data': data, 'code': 20000}
+    return JsonResponse(response)
