@@ -4,19 +4,23 @@ from collections import Counter
 
 import networkx as nx
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
 from networkx.algorithms import community
 
 from tqdm import tqdm
 
-from .utils import load_data, cal_average_path_length, get_combo_name, get_combos_arr
-from .influence_maximization import unweighted_ic, weighted_ic
+from utils import load_data_pickle, load_data_csv, cal_average_path_length, get_combo_name, get_combos_arr
+from influence_maximization import unweighted_ic, weighted_ic
 
 
 class ComplexNetwork:
     def __init__(self):
-        self.raw_data = load_data()
+        # 网易云数据
+        self.raw_data = load_data_pickle()
         self.network = self.__generate_network()
+        # lastfm数据
+        # self.raw_data = load_data_csv()
+        # self.network = self.__generate_network_lastfm()
         self.communinty_method_map = {
             'girvan_newman': self.get_community_by_girvan_newman,
             'greedy_modularity': self.get_community_by_greedy_modularity,
@@ -35,6 +39,15 @@ class ComplexNetwork:
                     follows.remove(follow_id)
             edges = itertools.product([user["id"]], follows)
             network.add_edges_from(edges)
+        return network
+
+    def __generate_network_lastfm(self):
+        df = pd.DataFrame(self.raw_data[1:], columns=self.raw_data[0])
+        network = nx.Graph(name='lastfm_asia')
+        nodes = list(set(df['node_1']).union(set(df['node_2'])))
+        edges = list(zip(df['node_1'], df['node_2']))
+        network.add_nodes_from(nodes)
+        network.add_edges_from(edges)
         return network
 
     def retrieve(self):
@@ -148,9 +161,15 @@ class ComplexNetwork:
     def get_community_by_girvan_newman(self, community_num):
         """
         girvan_newman方法，社区检测
-        @params community_num 期望划分成的社区数量
+        @params community_num 期望划分成的社区数量，有限制，最小值为len(tuple(sorted(c) for c in next(g1)))
         """
+        res = []
         communities_generator = community.girvan_newman(self.network)
+        first_com = next(communities_generator)
+        if community_num < len(tuple(first_com)):
+            return res
+        if community_num == len(tuple(first_com)):
+            return tuple(sorted(c) for c in first_com)
         for com in itertools.islice(communities_generator, community_num):
             if len(com) == community_num:
                 res = tuple(sorted(c) for c in com)
@@ -162,7 +181,10 @@ class ComplexNetwork:
         greedy modularity方法，社区检测
         @params community_num 期望划分成的社区数量
         """
-        communities = community.greedy_modularity_communities(self.network, best_n=community_num)
+        try:
+            communities = community.greedy_modularity_communities(self.network, best_n=community_num)
+        except StopIteration:
+            communities = community.greedy_modularity_communities(self.network)
         res = []
         for com in communities:
             res.append(list(com))
@@ -182,9 +204,13 @@ class ComplexNetwork:
         v = eigen_vectors.T[lambda2_pos]
         pos = []
         neg = []
-        # 根据0二分
+        split_value = 0
+        median_idx = len(v) // 2
+        tmp = sorted(v)
+        split_value = (tmp[median_idx] + tmp[~median_idx]) / 2
+        # 根据0或中位数二分
         for idx, val in zip(range(len(v)), v):
-            if val > 0:
+            if val > split_value:
                 pos.append(idx)
             else:
                 neg.append(idx)
@@ -221,6 +247,66 @@ class ComplexNetwork:
         graph_data["combos"] = get_combos_arr(len(communities))
         return graph_data
 
+    def generate_community_evaluation(self, start_num=2, end_num=10):
+        """
+        生成对划分的community的质量的评估数据
+        对于不同节点的数据集，需要使用不同的start_num和end_num
+        1000节点的数据集，325,342
+        :param start_num: 起始社区数量
+        :param end_num: 结束社区数量
+        """
+        assert start_num > 1
+
+        res = {}
+        score = {}
+        methods = ['girvan_newman', 'greedy_modularity']
+        for method_name in methods:
+            score[method_name] = {
+                'modularity': [],
+                'coverage': [],
+                'performance': [],
+            }
+            method = self.communinty_method_map[method_name]
+            for num in range(start_num, end_num+1):
+                communities = method(num)
+                modularity_score = community.modularity(self.network, communities)
+                coverage, performance = community.partition_quality(self.network, communities)
+                score[method_name]['modularity'].append(modularity_score)
+                score[method_name]['coverage'].append(coverage)
+                score[method_name]['performance'].append(performance)
+
+        x_axis_label = list(range(start_num, end_num + 1))
+        legend = [m + e for m, e in list(itertools.product(methods, ['--modularity', '--coverage', '--performance']))]
+        graph_data = []
+        dotted_style = {
+            'type': 'dotted',
+        }
+        color_map = {
+            'modularity': 'red',
+            'coverage': 'green',
+            'performance': 'blue',
+        }
+        for method, evaluations in score.items():
+            style = {} if method == 'girvan_newman' else dotted_style
+            for key, val in evaluations.items():
+                color = {
+                    'color': color_map[key],
+                }
+                graph_data.append({
+                    'name': method + '--' + key,
+                    'type': 'line',
+                    'data': val,
+                    'lineStyle': {**style, **color}
+                })
+
+        return {
+            "x_axis_name": "Community Amount",
+            "x_axis_label": x_axis_label,
+            "y_axis_name": "Evaluation",
+            "legend": legend,
+            "graph_data": graph_data,
+        }
+
     def greedy_ic(self, num_of_seed, case='unweighted', epochs=5, p=0.5):
         """
         Influence Maximization 贪心算法
@@ -252,7 +338,7 @@ class ComplexNetwork:
         :param case: 1-unweighted, 2-weighted
         :param p: 无权重独立级联模型传播概率
         :param epochs: 每轮迭代模拟的次数
-        :param heuristic: 1-degree_centrality, 2-distance_centrality, 3-random_nodes
+        :param heuristic: 1-degree_centrality, 2-distance_centrality-pagerank, 3-distance_centrality-hits, 4-random
         :return: 种子节点集合
         """
         seed = []
@@ -265,8 +351,13 @@ class ComplexNetwork:
             node_list = sorted(list(nx.degree(self.network)), key=lambda x: -x[1])
             candidates = [i[0] for i in node_list[:num_of_seed]]
         elif heuristic == 2:
-            # 选择最靠近网络中心的节点，根据pagerank或hits得分排序
+            # 选择最靠近网络中心的节点，根据pagerank得分排序
             node_list = sorted(nx.pagerank(self.network).items(), key=lambda kv: -kv[1])
+            candidates = [i[0] for i in node_list[:num_of_seed]]
+        elif heuristic == 3:
+            # 选择最靠近网络中心的节点，根据hits的authority得分排序
+            h, a = nx.hits(self.network)
+            node_list = sorted(a.items(), key=lambda kv: -kv[1])
             candidates = [i[0] for i in node_list[:num_of_seed]]
         else:
             # 随机选择节点
@@ -282,7 +373,7 @@ class ComplexNetwork:
 
     def get_influence_comparison_data(self, case, epochs=5, p=0.5):
         num_of_seed = 30
-        legend = ['greedy', 'high degree', 'central', 'random']
+        legend = ['greedy', 'high degree', 'central-pagerank', 'central-hits', 'random']
         x_axis_label = list(range(1, 31))
         if case == 'unweighted':
             title = 'p = ' + str(p)
@@ -292,55 +383,50 @@ class ComplexNetwork:
         graph_data = []
         # greedy
         res_greedy = self.greedy_ic(num_of_seed, case=case, epochs=epochs, p=p)
-        graph_data.append({
-            'name': 'greedy',
-            'type': 'line',
-            'data': [item[1] for item in res_greedy]
-        })
         # heuristic
         res_degree = self.heuristic_ic(num_of_seed, case=case, epochs=epochs, p=p, heuristic=1)
-        res_central = self.heuristic_ic(num_of_seed, case=case, epochs=epochs, p=p, heuristic=2)
-        res_random = self.heuristic_ic(num_of_seed, case=case, epochs=epochs, p=p, heuristic=3)
-        graph_data.append({
-            'name': 'high degree',
-            'type': 'line',
-            'data': [item[1] for item in res_degree]
-        })
-        graph_data.append({
-            'name': 'central',
-            'type': 'line',
-            'data': [item[1] for item in res_central]
-        })
-        graph_data.append({
-            'name': 'random',
-            'type': 'line',
-            'data': [item[1] for item in res_random]
-        })
+        res_central_p = self.heuristic_ic(num_of_seed, case=case, epochs=epochs, p=p, heuristic=2)
+        res_central_h = self.heuristic_ic(num_of_seed, case=case, epochs=epochs, p=p, heuristic=3)
+        res_random = self.heuristic_ic(num_of_seed, case=case, epochs=epochs, p=p, heuristic=4)
+        for name, res in zip(legend, [res_greedy, res_degree, res_central_p, res_central_h, res_random]):
+            graph_data.append({
+                'name': name,
+                'type': 'line',
+                'data': [item[1] for item in res]
+            })
         return {
             "x_axis_name": "Seed Set Size",
             "x_axis_label": x_axis_label,
             "y_axis_name": "Active Set Size",
             "legend": legend,
             "graph_data": graph_data,
+            "title": title,
         }
 
 
 if __name__ == "__main__":
     G = ComplexNetwork()
-    # print(G.node_distribution())
+    # print(G.get_node_distribution())
     # print(G.get_network_params())
 
-    # g1 = community.girvan_newman(G.network)
-    # for com in itertools.islice(g1, 4):
-    #     c = tuple(sorted(c) for c in com)
+    for num in range(325, 350):
+        com = G.get_community_by_greedy_modularity(num)
+        print(len(com), community.modularity(G.network, com))
+    # g = community.girvan_newman(G.network)
+    # print(len(next(g)))
     #
-    g2 = community.greedy_modularity_communities(G.network, best_n=5)
+    # g2 = community.greedy_modularity_communities(G.network, cutoff=325, best_n=325)
+    # print(len(g2))
 
-    # g3 = G.get_community_by_spectral_partition()
+    # g3 = G.get_community_by_spectral_partition(2)
+    # print(len(g3))
 
-    # res1 = G.heuristic_ic(4, heuristic=1, case=1)
-    res2 = G.heuristic_ic(4, heuristic=2, case=1)
+    # res1 = G.greedy_ic(30, epochs=1)
+    # res2 = G.heuristic_ic(30, heuristic=3)
     # res3 = G.heuristic_ic(4, heuristic=3, case=1)
     # print(res1)
-    print(res2)
+    # print(res2)
     # print(res3)
+
+    # r = G.get_influence_comparison_data('unweighted')
+    # print(r)

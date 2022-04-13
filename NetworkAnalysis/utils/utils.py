@@ -1,14 +1,26 @@
 import pickle as pkl
+import csv
 
-default_path = 'D:\\Codings\\github_repo\\ComplexNetworkBackend\\data\\progress100.pkl'
+# default_path = 'D:\\Codings\\github_repo\\ComplexNetworkBackend\\data\\progress100.pkl'
 # default_path = '../../data/progress100.pkl'
-# default_path = '../../data/progress.pkl'
+default_path = '../../data/progress.pkl'
+
+lastfm_data_path = '../../data/lasftm_asia/lastfm_asia_edges.csv'
 
 
-def load_data(path=default_path):
+def load_data_pickle(path=default_path):
     with open(path, "rb+") as f:
         file_data = pkl.load(f, encoding="GBK")
     return file_data
+
+
+def load_data_csv(path=lastfm_data_path):
+    tmp = []
+    with open(path, 'r+') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            tmp.append(row)
+    return tmp
 
 
 def cal_average_path_length(path_dict):

@@ -11,5 +11,6 @@ urlpatterns = [
     path('network-attack', views.attack_network),
     path('network-retrieve', views.retrieve_network),
     path('graph-data-community', views.get_graph_data_with_community),
+    path('community-evaluation', views.get_community_evaluation_data),
     path('influence-comparison', views.get_influence_comparison_data),
 ]

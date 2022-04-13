@@ -74,6 +74,13 @@ def get_graph_data_with_community(request):
     return JsonResponse(response)
 
 
+def get_community_evaluation_data(request):
+    # 暂时设定没有输入参数
+    graph_data = network.generate_community_evaluation()
+    response = {'data': graph_data, 'code': 20000}
+    return JsonResponse(response)
+
+
 def get_influence_comparison_data(request):
     request_data = json.loads(request.body)
     is_weighted = request_data.get('is_weighted')

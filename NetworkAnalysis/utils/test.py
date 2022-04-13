@@ -50,6 +50,7 @@
 #     path_count += len(paths.keys())-1
 #
 # print(total_len/path_count)
+import itertools
 
 import numpy as np
 
@@ -78,10 +79,47 @@ import numpy as np
 #
 # print(pos, neg)
 
-a = [(1, 2), [3, 4], [5, 6]]
+#a = [(1, 2), [3, 4], [5, 6]]
+#
+# b = [i[1] for i in a]
+# print(b)
 
-b = [i[1] for i in a]
-print(b)
+
+# import csv
+# import pandas as pd
+# import networkx as nx
+#
+# tmp = []
+#
+# with open('../../data/lasftm_asia/lastfm_asia_edges.csv', 'r+') as f:
+#     reader = csv.reader(f)
+#     for row in reader:
+#         tmp.append(row)
+#
+# df = pd.DataFrame(tmp[1:], columns=tmp[0])
+#
+# network = nx.DiGraph(name='lastfm_asia')
+#
+# nodes = list(set(df['node_1']).union(set(df['node_2'])))
+#
+# edges = list(zip(df['node_1'], df['node_2']))
+#
+# network.add_nodes_from(nodes)
+# network.add_edges_from(edges)
+#
+# print(network.degree)
+
+dotted_style = {
+    'type': 'dotted',
+}
+color_map = {
+    'modularity': 'red',
+    'coverage': 'green',
+    'performance': 'blue',
+}
+
+print({**dotted_style, **color_map})
+
 
 
 
