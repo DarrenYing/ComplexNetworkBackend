@@ -1,9 +1,9 @@
 import pickle as pkl
 import csv
 
-# default_path = 'D:\\Codings\\github_repo\\ComplexNetworkBackend\\data\\progress100.pkl'
+default_path = 'D:\\Codings\\github_repo\\ComplexNetworkBackend\\data\\progress100.pkl'
 # default_path = '../../data/progress100.pkl'
-default_path = '../../data/progress.pkl'
+# default_path = '../../data/progress.pkl'
 
 lastfm_data_path = '../../data/lasftm_asia/lastfm_asia_edges.csv'
 
