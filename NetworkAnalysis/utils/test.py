@@ -50,9 +50,6 @@
 #     path_count += len(paths.keys())-1
 #
 # print(total_len/path_count)
-import itertools
-
-import numpy as np
 
 # matrix = [
 #     [3, -1, -1, 0, -1, 0],
@@ -79,7 +76,7 @@ import numpy as np
 #
 # print(pos, neg)
 
-#a = [(1, 2), [3, 4], [5, 6]]
+# a = [(1, 2), [3, 4], [5, 6]]
 #
 # b = [i[1] for i in a]
 # print(b)
@@ -109,17 +106,36 @@ import numpy as np
 #
 # print(network.degree)
 
-dotted_style = {
-    'type': 'dotted',
-}
-color_map = {
-    'modularity': 'red',
-    'coverage': 'green',
-    'performance': 'blue',
-}
+# dotted_style = {
+#     'type': 'dotted',
+# }
+# color_map = {
+#     'modularity': 'red',
+#     'coverage': 'green',
+#     'performance': 'blue',
+# }
+#
+# print({**dotted_style, **color_map})
 
-print({**dotted_style, **color_map})
+import numpy as np
+from itertools import groupby
 
 
+labels = [1, 3, 2, 1, 2, 3, 4, 1, 3, 4]
+index = range(len(labels))
+arr = sorted(list(zip(labels, index)), key=lambda x: x[0])
+g = groupby(arr, key=lambda x: x[0])
+res = []
+for key, group in g:
+    res.append([item[1] for item in list(group)])
+print(res)
+# groups = []
+# for index, label in enumerate(labels):
 
 
+from operator import itemgetter
+# x = [(1, 2), (2, 3), (1, 4), (5, 5), (3, 4), (2, 6)]
+# # x1 = sorted(x, key=lambda t: t[0])
+# p = groupby(x, key=lambda t: t[0])
+# for i in p:
+#     print(i[0], [_[1] for _ in i[1]])
