@@ -10,8 +10,8 @@ from networkx.algorithms import community
 from sklearn.cluster import KMeans
 from tqdm import tqdm
 
-from .utils import load_data_pickle, load_data_csv, cal_average_path_length, get_combo_name, get_combos_arr
-from .influence_maximization import unweighted_ic, weighted_ic
+from NetworkAnalysis.utils.utils import load_data_pickle, load_data_csv, cal_average_path_length, get_combo_name, get_combos_arr
+from NetworkAnalysis.utils.influence_maximization import unweighted_ic, weighted_ic
 
 
 class ComplexNetwork:
